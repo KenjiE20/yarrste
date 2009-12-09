@@ -2,7 +2,7 @@
 /*
  * Project:	YARRSTE: Yet Another Really Rather Simple Templating Engine
  * File:	parse.php, template parsing file
- * Version:	0.0.52
+ * Version:	0.0.53
  * License:	GPL
  *
  * Copyright (c) 2009 by KenjiE20 <longbow@longbowslair.co.uk>
@@ -25,7 +25,7 @@ global $YARRSTE_debug;
 global $YARRSTE_time_start;
 global $YARRSTE_caching;
 // YARRSTE version
-$YARRSTE_version = '0.0.52';
+$YARRSTE_version = '0.0.53';
 $GLOBALS['credinline'] = '';
 $GLOBALS['debuginline'] = '';
 $GLOBALS['geninline'] = '';
@@ -255,12 +255,37 @@ function YARRSTE_parse ($template, $page) {
 					$eachout .= $endmatch[1];
 					// Build out string
 					$out = '';
+					// Test if array is nested
+					if (is_array($array[0])) { $nest = 1; } else { $nest = 0; }
 					// Build out with string for each key in array
 					foreach ($array as $item) {
-						// NOTE: Multi-array should go here
-						if (preg_match ('/\{FOREACH\}/', $eachout)) {
-							// Fill in data
-							$out .= preg_replace('/\{FOREACH\}/', $item, $eachout);
+						// Check array is consistantly an array
+						if ($nest && is_array($item)) {
+							$nestout = $eachout;
+							while (preg_match ('/\{FOREACH (.*)\}/', $nestout, $match)) {
+								$nestout = preg_replace('/\{FOREACH .*\}/', $item[$match[1]], $nestout, 1);
+							}
+							$out .= $nestout;
+						} elseif ($nest && !is_array($item)) {
+							// Entire array's should have nested, mismatched values will break stuff
+							$YARRSTE_caching = 0;
+							$str = "Parsing error; This array contains non-array elements, where arrays where expected.<br />\nThe entire array \"".$var."\" should contain the same elements.\n\n<pre>\n{FOREACH ".strtoupper($var)." :}";
+							if (isset($match[2]) && $match[2] == "\r" ) { $str .= $match[2]; }
+							$str .= htmlspecialchars($eachout)."{ENDFOREACH ;}\n</pre>";
+							return $str;
+						// Not nested, handle as list
+						} elseif (!$nest && !is_array($item)) {
+							if (preg_match ('/\{FOREACH\}/', $eachout)) {
+								// Fill in data
+								$out .= preg_replace('/\{FOREACH\}/', $item, $eachout);
+							}
+						} else {
+							// Entire array's should have nested, mismatched values will break stuff
+							$YARRSTE_caching = 0;
+							$str = "Parsing error; This array contains non-array elements, where arrays where expected.<br />\nThe entire array \"".$var."\" should contain the same elements.\n\n<pre>\n{FOREACH ".strtoupper($var)." :}";
+							if (isset($match[2]) && $match[2] == "\r" ) { $str .= $match[2]; }
+							$str .= htmlspecialchars($eachout)."{ENDFOREACH ;}\n</pre>";
+							return $str;
 						}
 					}
 					// Remove END tag
@@ -356,10 +381,13 @@ function YARRSTE_parse ($template, $page) {
 			if (count($toparse)) {
 				// Loop through the array in $page to find/replace
 				foreach ($toparse as $item) {
+					// Check we don't have tags that should be logical
 					if (isset(${$item}) && !is_array(${$item})) {
+						// Replace tag with content
 						$replace = ${$item};
 						$find = "/\{".strtoupper($item)."\}/";
 						$line = preg_replace($find, $replace, $line);
+					// Raise an error if so
 					} else {
 						$find = "/\{".strtoupper($item)."\}/";
 						if (preg_match ($find, $line, $match)) {
