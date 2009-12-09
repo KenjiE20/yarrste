@@ -2,7 +2,7 @@
 /*
  * Project:	YARRSTE: Yet Another Really Rather Simple Templating Engine
  * File:	cache.php, simple caching
- * Version:	0.0.39
+ * Version:	0.0.52
  * License:	GPL
  *
  * Copyright (c) 2009 by KenjiE20 <longbow@longbowslair.co.uk>

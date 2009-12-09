@@ -2,7 +2,7 @@
 /*
  * Project:	YARRSTE: Yet Another Really Rather Simple Templating Engine
  * File:	admin_funcs.php, admin functions file
- * Version:	0.0.39
+ * Version:	0.0.52
  * License:	GPL
  *
  * Copyright (c) 2009 by KenjiE20 <longbow@longbowslair.co.uk>
@@ -21,7 +21,7 @@ function list_dir ($dir_handle, $dir, $type) {
 	echo "<ol>\n";
 	?>
 <li class="ydirli<?php echo $row; ?>">
-<form action="<?php echo basename($_SERVER['SCRIPT_NAME']); ?>" method="post">
+<form action="<?php echo basename($_SERVER['SCRIPT_NAME']); ?>?do=newfile" method="post">
 <input type="hidden" name="magickey" value="<?php echo MAGIC_KEY; ?>" />
 <input type="hidden" name="dir" value="<?php echo $dir; ?>" />
 <input type="hidden" name="type" value="<?php echo $type; ?>" />
@@ -29,7 +29,7 @@ Create new file: <input type="text" name="newfile"></textarea>
 <input type="submit" name="submit" value="Save">
 </form>
 <?php if ($type == 'tpl'): ?>
-<form action="<?php echo basename($_SERVER['SCRIPT_NAME']); ?>" method="post">
+<form action="<?php echo basename($_SERVER['SCRIPT_NAME']); ?>?do=newfile" method="post">
 <input type="hidden" name="magickey" value="<?php echo MAGIC_KEY; ?>" />
 <input type="hidden" name="dir" value="<?php echo $dir; ?>" />
 <input type="hidden" name="type" value="css" />
@@ -50,11 +50,12 @@ Create new css file: <input type="text" name="newfile"></textarea>
 			if ($row) { $row = '0'; } else { $row = '1'; }
 			echo "<li class=\"ydirli".$row."\">";
 			if ($type == 'text') { echo "<span class=\"preview\"><a href=\"".basename($_SERVER['SCRIPT_NAME'])."?do=preview&file=".$dir."/".$file."\">Preview Code</a></span>"; }
-			echo "<a href=\"".basename($_SERVER['SCRIPT_NAME'])."?edit=".$dir."/".$file."\">".$file."</a>";
+			echo "<a href=\"".basename($_SERVER['SCRIPT_NAME'])."?do=edit&file=".$dir."/".$file."\">".$file."</a>";
 			// Stolen description lines from wordpress just... because
 			$data = implode( '', file( $dir.'/'.$file ) );
 			if ( preg_match( '|Description:(.*)$|mi', $data, $name )) {
-			echo " - Description: ".trim(preg_replace("/\s*(?:\*\/|\?>).*/", '', $name[1])) . "</li>\n"; }
+			echo " - Description: ".trim(preg_replace("/\s*(?:\*\/|\?>).*/", '', $name[1])); }
+			echo "</li>\n";
 
 
 		}
@@ -64,10 +65,71 @@ Create new css file: <input type="text" name="newfile"></textarea>
 }
 // End Recursive Searching
 
+// Make a new file
+function YARRSTE_newfile () {
+	global $YARRSTE_admin_action;
+	// Magic key safety check
+	if (isset ($_REQUEST['magickey'])) {
+		if ($_REQUEST['magickey'] == MAGIC_KEY) {
+			// Grab and sort items
+			$YARRSTE_name = $_POST['newfile'];
+			$YARRSTE_dir = $_POST['dir'];
+			$YARRSTE_type = $_POST['type'];
+			// What are we making
+			if ($YARRSTE_type == 'text') { $YARRSTE_type = '.php'; }
+			elseif ($YARRSTE_type == 'tpl') {$YARRSTE_type = '.tpl'; }
+			elseif ($YARRSTE_type == 'css') {$YARRSTE_type = '.css'; }
+
+			// Check file doesn't already exist
+			$YARRSTE_file = $YARRSTE_dir.'/'.$YARRSTE_name.$YARRSTE_type;
+			if (file_exists($YARRSTE_file)) {
+				$YARRSTE_admin_action = "File already exists: $YARRSTE_file";
+			} else {
+				$YARRSTE_admin_action = "Creating new file... ";
+				if ($YARRSTE_type == '.php') {
+					// Build basic content file
+					if (new_content($YARRSTE_file)) {
+						$YARRSTE_admin_action .= "File ".$YARRSTE_file." created";
+					} else {
+						$YARRSTE_admin_action .= "Something bad happened";
+					}
+				} else {
+					// Make blank file, no basic build for others
+					touch ($YARRSTE_file);
+					$YARRSTE_admin_action .= "File ".$YARRSTE_file." created";
+				}
+			}
+		}
+	}
+}
+
+// Write edits to a file
+function YARRSTE_edit_file ($YARRSTE_toedit) {
+	global $YARRSTE_admin_action;
+	$fp = @fopen($YARRSTE_toedit, 'w');
+	if (!$fp) {
+		$YARRSTE_admin_action = "Unable to open file for writing: $YARRSTE_toedit";
+		fclose($fp);
+	} else {
+		// Dev marker -- Magic quotes changes in 6
+		if (get_magic_quotes_gpc()) {
+			$data = stripslashes($_POST['textarea']);
+		} else {
+			$data = $_POST['textarea'];
+		}
+		fwrite($fp, $data);
+		fclose($fp);
+		$YARRSTE_admin_action = "Successfully updated file: $YARRSTE_toedit";
+	}
+}
+
 // Create new content file layout
 function new_content ($file) {
 	$newfile = fopen($file, 'x');
 	$basetext = "<?php
+/*
+Description: File description for admin page
+*/
 
 // <!-- Setting up -->
 
@@ -76,10 +138,12 @@ function new_content ($file) {
 // Uncomment to override default caching (True / 1 for on, False / 0 for off)
 //\$Y_cache = 0;
 // This page's title, this is expected, but optional
-//\$title = '';
+//\$title = 'Page Title';
+// You can add your own set up vars here
 
 // List which variables should be used for parsing
 // This allows extra PHP code to be ran here, without affecting what the parser does
+\\ e.g. \$toparse = array(\"left\", \"right\", \"content\");
 \$toparse = array();
 
 // <!-- Content -->
@@ -191,16 +255,32 @@ function clear_cache () {
 	$YARRSTE_admin_action = "Cache Cleared";
 }
 
+// Single Cache cleaning
+function clear_single_cache ($file) {
+	global $cachedir;
+	global $YARRSTE_admin_action;
+	$filename = $cachedir.$file;
+	$manifest = $cachedir."manifest";
+	$manifile = file_get_contents($manifest);
+	if (file_exists($filename)) {
+		$find = "/^".preg_quote($filename,'/').".*\n/";
+		$manifile = preg_replace($find, "", $manifile);
+		unlink($filename);
+		file_put_contents($manifest, $manifile);
+	}
+	$YARRSTE_admin_action = "Cache File ".$file." Removed";
+}
+
 // Cache list
 function view_cache () {
 	global $cachedir;
 	$manifest = $cachedir."manifest";
 	$manifile = file($manifest);
 	echo "Cache files:<br />\n";
-	echo "<table class=\"cachefiles\"><tr><th width=\"300\">Filename</th><th>Age</th><th>Page</th><th width=\"80\">File Size</th></tr>\n";
+	echo "<table class=\"cachefiles\"><tr><th>&nbsp;</th><th width=\"300\">Filename</th><th>Age</th><th>Page</th><th width=\"80\">File Size</th></tr>\n";
 	$tr = 0;
 	foreach (glob($cachedir."*") as $filename) {
-		echo "<tr class=\"d".($tr & 1)."\"><td>".basename($filename)."</td><td>";
+		echo "<tr class=\"d".($tr & 1)."\"><td style=\"text-align: center;\"><a title=\"Delete cache file\" href=\"".basename($_SERVER['SCRIPT_NAME'])."?do=clear_single_cache&file=".basename($filename)."\">x</td><td>".basename($filename)."</td><td>";
 		$mtime = filemtime($filename);
 		$age = time() - $mtime;
 		echo time_duration($age) . "</td><td>";

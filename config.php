@@ -2,7 +2,7 @@
 /*
  * Project:	YARRSTE: Yet Another Really Rather Simple Templating Engine
  * File:	config.php, configuration file
- * Version:	0.0.39
+ * Version:	0.0.52
  * License:	GPL
  *
  * Copyright (c) 2009 by KenjiE20 <longbow@longbowslair.co.uk>
@@ -21,7 +21,7 @@ $YARRSTE_tplpath = "templates"; // Path to template dir
 $YARRSTE_textpath = "content"; // Path to content text files
 
 // Site stuff
-$YARRSTE_sitename = "Template Tester"; // Your site name, appears in the template tag {SITENAME}
+$YARRSTE_sitename = "Default Template"; // Your site name, appears in the template tag {SITENAME}
 $YARRSTE_titlesep = "-"; // The character string you want to seperate site name from page name : | - > are all good ones
 $YARRSTE_deftpl = 'default'; // Default site template, should be in the form path/file i.e. 'foo/bar'
 $YARRSTE_defpage = 'default'; // Default page if you don't ask for one, say like the homepage, should be in the form path/file i.e. 'foo/bar'

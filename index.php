@@ -2,12 +2,13 @@
 /*
  * Project:	YARRSTE: Yet Another Really Rather Simple Templating Engine
  * File:	index.php, main site file
- * Version:	0.0.39
+ * Version:	0.0.52
  * License:	GPL
  *
  * Copyright (c) 2009 by KenjiE20 <longbow@longbowslair.co.uk>
  *
  */
+
 function timer_start()
 {
 	global $YARRSTE_time_start;
@@ -84,10 +85,20 @@ unset ($YARRSTE_textsearch,$searchlines,$check,$tplset,$cacheset);
 
 // Caching
 if ($YARRSTE_caching == 'True' || $YARRSTE_caching == 'true' || $YARRSTE_caching == '1') {
-	$cache = YARRSTE_cache_check($YARRSTE_page, false);
+	//Build page url with vars
+	$YARRSTE_c_page = $YARRSTE_page;
+	$YARRSTE_c_page .= '?';
+	foreach ($_GET as $Y_get_item => $Y_get_value) {
+		if ($Y_get_item != 'page' && $Y_get_item != 'debug') {
+			$YARRSTE_c_page .= $Y_get_item."=".$Y_get_value."&";
+		}
+	}
+	$YARRSTE_c_page = substr($YARRSTE_c_page, 0, -1);
+
+	$cache = YARRSTE_cache_check($YARRSTE_c_page, false);
 
 	if ($cache == 'HIT') {
-		$output = YARRSTE_cache_open($YARRSTE_page);
+		$output = YARRSTE_cache_open($YARRSTE_c_page);
 		if ($output) {
 			echo $output;
 			exit();
@@ -125,7 +136,7 @@ $output = '';
 $output = YARRSTE_parse($YARRSTE_template, $YARRSTE_page);
 
 if ($YARRSTE_caching == 'True' || $YARRSTE_caching == 'true' || $YARRSTE_caching == '1' && $cache != 'IGNORE') {
-	YARRSTE_cache_write ($YARRSTE_page, $output);
+	YARRSTE_cache_write ($YARRSTE_c_page, $output);
 }
 echo $output;
 

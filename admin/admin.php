@@ -2,7 +2,7 @@
 /*
  * Project:	YARRSTE: Yet Another Really Rather Simple Templating Engine
  * File:	admin.php, administration base file
- * Version:	0.0.39
+ * Version:	0.0.52
  * License:	GPL
  *
  * Copyright (c) 2009 by KenjiE20 <longbow@longbowslair.co.uk>
@@ -14,9 +14,10 @@ function timer_start()
     global $YARRSTE_time_start;
     $YARRSTE_time_start = microtime(TRUE);
 }
-
 timer_start();
 # ^^^ Timing stuff ^^^
+
+// <- Pre-admin tasks ->
 
 // Allow included files to run
 define('IN_YARRSTE', true);
@@ -31,79 +32,39 @@ $YARRSTE_toedit = '';
 $YARRSTE_preview = '';
 $YARRSTE_admin_action = '';
 
-// <- Pre-admin tasks ->
-
-// See if we've been told what to edit
-if (isset ($_GET['edit'])) {
-	$YARRSTE_toedit = $_GET['edit'];
-
-	// Before anything else, Magic key safety check
-	// If it's not there we're not doing anything anyway
-	// if it is there, it needs to be right
-	if (isset ($_REQUEST['magickey'])) {
-		if ($_REQUEST['magickey'] == MAGIC_KEY) {
-			// Saving an edited file
-			if (isset($_POST['textarea'])) {
-				$fp = @fopen($YARRSTE_toedit, 'w');
-				if (!$fp) {
-					$YARRSTE_admin_action = "Unable to open file for writing: $YARRSTE_toedit";
-				} else {
-					// Dev marker -- Magic quotes changes in 6
-					if (get_magic_quotes_gpc()) {
-						$data = stripslashes($_POST['textarea']);
-					} else {
-						$data = $_POST['textarea'];
-					}
-					fwrite($fp, $data);
-					fclose($fp);
-					$YARRSTE_admin_action = "Successfully updated file: $YARRSTE_toedit";
-				}
-			}
-		}
-	}
-// If not editing, are we making a new file
-} elseif (isset($_POST['newfile'])) {
-	// Magic key safety check
-	if (isset ($_REQUEST['magickey'])) {
-		if ($_REQUEST['magickey'] == MAGIC_KEY) {
-			// Grab and sort items
-			$YARRSTE_name = $_POST['newfile'];
-			$YARRSTE_dir = $_POST['dir'];
-			$YARRSTE_type = $_POST['type'];
-			// What are we making
-			if ($YARRSTE_type == 'text') { $YARRSTE_type = '.php'; }
-			elseif ($YARRSTE_type == 'tpl') {$YARRSTE_type = '.tpl'; }
-			elseif ($YARRSTE_type == 'css') {$YARRSTE_type = '.css'; }
-
-			// Check file doesn't already exist
-			$YARRSTE_file = $YARRSTE_dir.'/'.$YARRSTE_name.$YARRSTE_type;
-			if (file_exists($YARRSTE_file)) {
-				$YARRSTE_admin_action = "File already exists: $YARRSTE_file";
-			} else {
-				$YARRSTE_admin_action = "Creating new file... ";
-				if ($YARRSTE_type == '.php') {
-					// Build basic content file
-					if (new_content($YARRSTE_file)) {
-						$YARRSTE_admin_action .= "File created";
-					} else {
-						$YARRSTE_admin_action .= "Something bad happened";
-					}
-				} else {
-					// Make blank file, no basic build for others
-					touch ($YARRSTE_file);
-					$YARRSTE_admin_action .= "File created";
-				}
-			}
-		}
-	}
-// Get a link based action
-} elseif (isset ($_GET['do'])) {
+// Get do action
+if (isset ($_GET['do'])) {
 	$YARRSTE_admin_do = $_GET['do'];
+	// Page edit
+	if ($YARRSTE_admin_do == 'edit') {
+		$YARRSTE_toedit = $_GET['file'];
+		// Before anything else, Magic key safety check
+		// If it's not there we're not doing anything anyway
+		// if it is there, it needs to be right
+		if (isset ($_REQUEST['magickey'])) {
+			if ($_REQUEST['magickey'] == MAGIC_KEY) {
+				// Saving an edited file
+				if (isset($_POST['textarea'])) {
+					YARRSTE_edit_file ($YARRSTE_toedit);
+				}
+			}
+		}
+	// Creating a new file
+	} elseif ($YARRSTE_admin_do == 'newfile') {
+		YARRSTE_newfile();
+		$YARRSTE_admin_do = 'base';
 	// Are we being asked for a page preview
-	if ($YARRSTE_admin_do == 'preview') {
+	} elseif ($YARRSTE_admin_do == 'preview') {
 		$YARRSTE_preview = $_GET['file'];
+	// Clearcache call
 	} elseif ($YARRSTE_admin_do == 'clearcache') {
 		clear_cache();
+		sleep(1);
+		$YARRSTE_admin_do = 'viewcache';
+	// Clear single cache call
+	} elseif ($YARRSTE_admin_do == 'clear_single_cache') {
+		$YARRSTE_clr_single = $_GET['file'];
+		clear_single_cache($YARRSTE_clr_single);
 		$YARRSTE_admin_do = 'viewcache';
 	} elseif ($YARRSTE_admin_action == 'test') {
 //		file
@@ -121,21 +82,24 @@ echo "<div class=\"wrapper\">\n";
 echo "<div class=\"adminmenu\">
 <a href=\"".basename($_SERVER['SCRIPT_NAME'])."\">Main</a><br />
 <a href=\"".basename($_SERVER['SCRIPT_NAME'])."?do=test\">Test func</a><br />
-<a href=\"".basename($_SERVER['SCRIPT_NAME'])."?do=viewcache\">Cache</a>\n</div>\n";
+<a href=\"".basename($_SERVER['SCRIPT_NAME'])."?do=viewcache\">Cache</a><br />
+<a href=\"".dirname($_SERVER['SCRIPT_NAME'])."/..\">Back to Site</a>\n</div>\n";
 echo "<div class=\"adminmain\">\n";
 
 // Prompt if don't know what to edit
 if ($YARRSTE_admin_do == 'base') {
 	// Scan templates
+	echo "<!-- BEGIN Templates -->\n";
 	echo "Available Template files:<br />\n<div class=\"listdir\">\n";
 	$YARRSTE_tplhandle = opendir('../'.$YARRSTE_tplpath);
 	list_dir($YARRSTE_tplhandle, '../'.$YARRSTE_tplpath, 'tpl');
 	// Scan content
+	echo "<!-- END Templates -->\n<!-- BEGIN Content -->\n";
 	echo "</div>\nAvailable Content files:<br />\n<div class=\"listdir\">\n";
 	$YARRSTE_texthandle = opendir('../'.$YARRSTE_textpath);
 	list_dir($YARRSTE_texthandle, '../'.$YARRSTE_textpath, 'text');
 	echo "</div>\n";
-	echo "";
+	echo "<!-- END Content -->\n";
 
 // Check for preview
 } elseif ($YARRSTE_admin_do == 'preview') {
@@ -143,7 +107,7 @@ if ($YARRSTE_admin_do == 'base') {
 } elseif ($YARRSTE_admin_do == 'viewcache') {
 	view_cache ();
 // Have an edit file, load up the edit stuff
-} elseif ($YARRSTE_toedit) {
+} elseif ($YARRSTE_admin_do == 'edit') {
 	//Check file's extention to determine what we're editing
 	$YARRSTE_extension = end(explode('.', $YARRSTE_toedit));
 	// Check if we've been told to plain text edit
@@ -155,8 +119,8 @@ if ($YARRSTE_admin_do == 'base') {
 
 	// Include content or load template
 	if ($YARRSTE_extension == 'php') {
-		// Bring in the file
-		include ($YARRSTE_toedit);
+		// Bring in the file (not used atm)
+//		include ($YARRSTE_toedit);
 		$YARRSTE_phpfile = file_get_contents($YARRSTE_toedit);
 		// Set $YARRSTE_type & highlighter
 		$YARRSTE_type = 'content';
@@ -165,17 +129,24 @@ if ($YARRSTE_admin_do == 'base') {
 		echo "Currently editing content file: ".$YARRSTE_toedit."<br /><br />\n";
 	} elseif ($YARRSTE_extension == 'tpl') {
 		// Bring in the file
-		$YARRSTE_tplfile = file_get_contents($YARRSTE_toedit);
+		$YARRSTE_rawfile = file_get_contents($YARRSTE_toedit);
 		// Set $YARRSTE_type & highlighter
-		$YARRSTE_type = 'tpl';
+		$YARRSTE_type = 'raw';
 		$codehi = 'html';
 		// Confirm active file
 		echo "Currently editing template file: ".$YARRSTE_toedit."<br /><br />\n";
+	} elseif ($YARRSTE_extension == 'css') {
+		// Bring in the file
+		$YARRSTE_rawfile = file_get_contents($YARRSTE_toedit);
+		// Set $YARRSTE_type & highlighter
+		$YARRSTE_type = 'raw';
+		// Confirm active file
+		echo "Currently editing style sheet file: ".$YARRSTE_toedit."<br /><br />\n";
 	} elseif ($YARRSTE_extension == 'adv') {
 		// Bring in the file
-		$YARRSTE_tplfile = file_get_contents($YARRSTE_toedit);
+		$YARRSTE_rawfile = file_get_contents($YARRSTE_toedit);
 		// Set $YARRSTE_type
-		$YARRSTE_type = 'tpl';
+		$YARRSTE_type = 'raw';
 		// Confirm active file
 		echo "Currently editing file: ".$YARRSTE_toedit."<br /><br />\n";
 	} else {
@@ -185,13 +156,13 @@ if ($YARRSTE_admin_do == 'base') {
 
 ?>
 <!--<script src="../include/codepress/codepress.js" type="text/javascript"></script>-->
-<form action="<?php echo basename($_SERVER['SCRIPT_NAME']); ?>?edit=<?php echo $YARRSTE_toedit; ?>" method="post">
+<form action="<?php echo basename($_SERVER['SCRIPT_NAME']); ?>?do=edit&file=<?php echo $YARRSTE_toedit; ?>" method="post">
 <input type="hidden" name="magickey" value="<?php echo MAGIC_KEY; ?>" />
 <textarea name="textarea" rows=20 cols="100%"><?php
 if ($YARRSTE_type == 'content') {
 	echo $YARRSTE_phpfile;
-} elseif ($YARRSTE_type == 'tpl') {
-	echo $YARRSTE_tplfile;
+} elseif ($YARRSTE_type == 'raw') {
+	echo $YARRSTE_rawfile;
 }
 ?></textarea><br />
 <input type="submit" name="submit" value="Save"><br />
@@ -199,6 +170,8 @@ if ($YARRSTE_type == 'content') {
 
 <?php
 }
+global $YARRSTE_version;
+echo "\n</div>\n<div style=\"clear:both;\"></div>\n<div style=\"font-size:small;color:grey;\">YARRSTE version: ".$YARRSTE_version."</div>\n</div>\n";
 
 /*	// And set up edit forms
 	if ($YARRSTE_type == 'content') {
@@ -239,9 +212,6 @@ for ($i = 0; $i < $YARRSTE_count; $i++) {
 <?php
 	} elseif ($YARRSTE_type == 'tpl') {
 */
-
-global $YARRSTE_version;
-echo "\n</div>\n<div style=\"clear:both;\"></div>\n<div style=\"font-size:small;color:grey;\">YARRSTE version: ".$YARRSTE_version."</div>\n</div>\n";
 
 /*			// Adding a parse item
 			if(isset($_POST['newparse'])) {
