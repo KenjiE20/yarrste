@@ -1,0 +1,80 @@
+body {
+	margin: 0;
+	padding: 0;
+}
+
+form {
+	margin: 0em;
+	padding: 0em;
+}
+
+.preview {
+	margin: 0em;
+	padding: 0em;
+	float: right;
+}
+
+.wrapper {
+	margin: 0.5em auto;
+	padding: 0.5em;
+	width: 95%;
+/*	background-color: #00FF00;*/
+}
+
+.adminaction {
+	margin: auto;
+	text-align: center;
+	padding: 0.1em;
+	background-color: #FFFFE0;
+}
+.adminmenu {
+	padding: 0.5em 0;
+	float: left;
+	width: 170px;
+/*	background-color: #0000FF;*/
+}
+.adminmain {
+	padding: 0.5em 0;
+	margin-left: 180px;
+/*	background-color: #FF0000;*/
+}
+
+.cachefiles {
+	width: 100%;
+	background-color: #666666;
+	border-style: dashed;
+	border-width: 1;
+}
+
+.cachefiles th {
+	background-color: #AAAAAA;
+}
+
+.cachefiles tr.d0 td {
+	background-color: #E0E0E0;
+}
+
+.cachefiles tr.d1 td {
+	background-color: #CCCCCC;
+}
+
+.listdir {
+	background-color: #EEEEEE;
+}
+.dir {
+	margin: 0;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
+	padding: 0;
+	background-color: #E0E0E0;
+	border-style: dashed;
+	border-width: 1;
+}
+
+.ydirli0 {
+	background-color: #CCCCCC;
+}
+
+.ydirli1 {
+	background-color: #AAAAAA;
+}
