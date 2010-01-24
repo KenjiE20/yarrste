@@ -28,7 +28,7 @@ $YARRSTE_defpage = 'default'; // Default page if you don't ask for one, say like
 //$YARRSTE_baseurl = "www.yourdomainhere.com/sitedir"; // Uncomment to override auto detection of site url, appears in the template tag {SITEURL}
 $YARRSTE_debug = 'True'; // Set this to 'True' if you want some useful info outputted, will output to the {DEBUG} tag if possible, or before </body> if no tag is present
 $YARRSTE_caching = 'False'; // Set this to 'True' if you want to use YARRSTE's basic caching system.
-//$YARRSTE_c_dir = './cache/'; // Uncomment and set to override the default cache directory
+//$YARRSTE_c_dir = 'cache'; // Uncomment and set to override the default cache directory
 //$YARRSTE_c_age = 600; // Uncomment and set to override the default cache age (in seconds)
 //$YARRSTE_c_ext = 'cache';// Uncomment and set to override the default cache file extension
 

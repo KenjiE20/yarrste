@@ -21,21 +21,21 @@ global $YARRSTE_c_age;
 global $YARRSTE_c_ext;
 global $YARRSTE_textpath;
 // Defaults (set these in config.php)
-$cachedir = './cache/';
+$cachedir = 'cache';
 $cachetime = 3600;
 $cacheext = 'cache';
 
-if ($YARRSTE_c_dir != '') {
+if (isset ($YARRSTE_c_dir) && $YARRSTE_c_dir != '') {
 	$cachedir = $YARRSTE_c_dir;
 }
-if ($YARRSTE_c_age != '') {
+if (isset ($YARRSTE_c_age) && $YARRSTE_c_age != '') {
 	$cachetime = $YARRSTE_c_age;
 }
-if ($YARRSTE_c_ext != '') {
+if (isset ($YARRSTE_c_ext) && $YARRSTE_c_ext != '') {
 	$cacheext = $YARRSTE_c_ext;
 }
 
-$cachedir = realpath(dirname(__FILE__).'/../'.$cachedir);
+$cachedir = dirname(dirname(__FILE__)).'/'.$cachedir;
 if (!preg_match('/\/$/', $cachedir)) {
 	$cachedir = preg_replace('/$/','/',$cachedir);
 } elseif (preg_match('/\/\/$/', $cachedir)) {
