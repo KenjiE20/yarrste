@@ -2,7 +2,7 @@
 /*
  * Project:	YARRSTE: Yet Another Really Rather Simple Templating Engine
  * File:	index.php, main site file
- * Version:	0.0.53
+ * Version:	svn-trunk
  * License:	GPL
  *
  * Copyright (c) 2009 by KenjiE20 <longbow@longbowslair.co.uk>

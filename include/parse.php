@@ -2,7 +2,7 @@
 /*
  * Project:	YARRSTE: Yet Another Really Rather Simple Templating Engine
  * File:	parse.php, template parsing file
- * Version:	0.0.53
+ * Version:	svn-trunk
  * License:	GPL
  *
  * Copyright (c) 2009 by KenjiE20 <longbow@longbowslair.co.uk>
@@ -25,7 +25,7 @@ global $YARRSTE_debug;
 global $YARRSTE_time_start;
 global $YARRSTE_caching;
 // YARRSTE version
-$YARRSTE_version = '0.0.53';
+$YARRSTE_version = 'svn-trunk';
 $GLOBALS['credinline'] = '';
 $GLOBALS['debuginline'] = '';
 $GLOBALS['geninline'] = '';
