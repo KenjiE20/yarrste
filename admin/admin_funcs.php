@@ -273,8 +273,15 @@ function clear_single_cache ($file) {
 
 // Cache list
 function view_cache () {
+	global $YARRSTE_caching;
 	global $cachedir;
 	$manifest = $cachedir."manifest";
+	if ($YARRSTE_caching != 'True' || $YARRSTE_caching != 'true' || $YARRSTE_caching != '1') {
+		if (!file_exists($manifest)) {
+			echo "Caching offline, and no exisitng cache files";
+			return;
+		}
+	}
 	$manifile = file($manifest);
 	echo "Cache files:<br />\n";
 	echo "<table class=\"cachefiles\"><tr><th>&nbsp;</th><th width=\"300\">Filename</th><th>Age</th><th>Page</th><th width=\"80\">File Size</th></tr>\n";
