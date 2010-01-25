@@ -16,7 +16,7 @@ if ( !defined('IN_YARRSTE') )
 }
 
 // Recursive searching
-function list_dir ($dir_handle, $dir, $type) {
+function list_dir ($dir_handle, $dir, $type, $show_hidden) {
 	$row = '0';
 	echo "<ol>\n";
 	?>
@@ -42,11 +42,21 @@ Create new css file: <input type="text" name="newfile"></textarea>
 	while (false !== ($file = readdir($dir_handle))) {
 		$dircheck = $dir.'/'.$file;
 		if (is_dir ($dircheck) && $file != "." && $file != "..") {
+			if (preg_match('/^\.\w+/', $file)) {
+				if (!$show_hidden) {
+					continue;
+				}
+			}
 			$handle = @opendir($dircheck);
 			echo "<li class=\"dir\">".$file;
-			list_dir($handle, $dircheck, $type);
+			list_dir($handle, $dircheck, $type, $show_hidden);
 			echo "</li>\n";
 		} elseif ($file != "." && $file != "..") {
+			if (preg_match('/^\.\w+/', $file)) {
+				if (!$show_hidden) {
+					continue;
+				}
+			}
 			if ($row) { $row = '0'; } else { $row = '1'; }
 			echo "<li class=\"ydirli".$row."\">";
 			if ($type == 'text') { echo "<span class=\"preview\"><a href=\"".basename($_SERVER['SCRIPT_NAME'])."?do=preview&file=".$dir."/".$file."\">Preview Code</a></span>"; }

@@ -88,16 +88,22 @@ echo "<div class=\"adminmain\">\n";
 
 // Prompt if don't know what to edit
 if ($YARRSTE_admin_do == 'base') {
+	// Get hidden toggle
+	if (isset($_GET['hidden'])) {
+		$YARRSTE_admin_show_hidden = $_GET['hidden'];
+	} else {
+		$YARRSTE_admin_show_hidden = 0;
+	}
 	// Scan templates
 	echo "<!-- BEGIN Templates -->\n";
 	echo "Available Template files:<br />\n<div class=\"listdir\">\n";
 	$YARRSTE_tplhandle = opendir('../'.$YARRSTE_tplpath);
-	list_dir($YARRSTE_tplhandle, '../'.$YARRSTE_tplpath, 'tpl');
+	list_dir($YARRSTE_tplhandle, '../'.$YARRSTE_tplpath, 'tpl', $YARRSTE_admin_show_hidden);
 	// Scan content
 	echo "<!-- END Templates -->\n<!-- BEGIN Content -->\n";
 	echo "</div>\nAvailable Content files:<br />\n<div class=\"listdir\">\n";
 	$YARRSTE_texthandle = opendir('../'.$YARRSTE_textpath);
-	list_dir($YARRSTE_texthandle, '../'.$YARRSTE_textpath, 'text');
+	list_dir($YARRSTE_texthandle, '../'.$YARRSTE_textpath, 'text', $YARRSTE_admin_show_hidden);
 	echo "</div>\n";
 	echo "<!-- END Content -->\n";
 
