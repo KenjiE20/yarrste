@@ -98,9 +98,9 @@ LOGIC;
   If the array is a flat array, then the system looks for {FOREACH} and
   replaces it with the value in the array.
   
-  If the array is a nested one, then the system looks for {FOREACH VAL}.
-  It then looks for VAL in one side of the nested array, to replace with
-  content from the other.
+  If the array is a nested one, then each array is treated as one instance of
+  the FOREACH loop. The system looks for {FOREACH VAL} and replaces VAL with
+  the content of the nested array.
 
 CACHING;
 
