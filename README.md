@@ -99,7 +99,7 @@ LOGIC;
   replaces it with the value in the array.
   
   If the array is a nested one, then each array is treated as one instance of
-  the FOREACH loop. The system looks for {FOREACH VAL} and replaces VAL with
+  the FOREACH loop. The system looks for {FOREACH index} and replaces it with
   the content of the nested array.
 
 CACHING;
